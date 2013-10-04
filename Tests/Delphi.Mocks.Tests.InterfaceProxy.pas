@@ -23,59 +23,69 @@
 {                                                                           }
 {***************************************************************************}
 
-{$DEFINE UNSUPPORTED_COMPILER_VERSION}
-{$IFDEF VER210} // RAD Studio 2010
-  {$DEFINE DELPHI_2010}
-  {$DEFINE DELPHI_2010_UP}
-  {$UNDEF UNSUPPORTED_COMPILER_VERSION}
-{$ENDIF VER210}
+unit Delphi.Mocks.Tests.InterfaceProxy;
 
-{$IFDEF VER220} // RAD Studio XE
-  {$DEFINE DELPHI_2010_UP}
-  {$DEFINE DELPHI_XE}
-  {$DEFINE DELPHI_XE_UP}
-  {$UNDEF UNSUPPORTED_COMPILER_VERSION}
-{$ENDIF VER220}
+interface
 
-{$IFDEF VER230} // RAD Studio XE2
-  {$DEFINE DELPHI_2010_UP}
-  {$DEFINE DELPHI_XE_UP}
-  {$DEFINE DELPHI_XE2}
-  {$DEFINE DELPHI_XE2_UP}
-  {$UNDEF UNSUPPORTED_COMPILER_VERSION}
-{$ENDIF VER230}
+uses
+  TestFramework;
 
-{$IFDEF VER240} // RAD Studio XE3
-  {$DEFINE DELPHI_2010_UP}
-  {$DEFINE DELPHI_XE_UP}
-  {$DEFINE DELPHI_XE2_UP}
-  {$DEFINE DELPHI_XE3}
-  {$DEFINE DELPHI_XE3_UP}
-  {$UNDEF UNSUPPORTED_COMPILER_VERSION}
-{$ENDIF VER240}
+type
+  {$M+}
+  ISimpleInterface = Interface
+  ['{F1731F12-2453-4818-A785-997AF7A3D51F}']
+  End;
 
-{$IFDEF VER250} // RAD Studio XE4
-  {$DEFINE DELPHI_2010_UP}
-  {$DEFINE DELPHI_XE_UP}
-  {$DEFINE DELPHI_XE2_UP}
-  {$DEFINE DELPHI_XE3_UP}
-  {$DEFINE DELPHI_XE4}
-  {$DEFINE DELPHI_XE4_UP}
-  {$UNDEF UNSUPPORTED_COMPILER_VERSION}
-{$ENDIF VER250}
+  ISecondSimpleInterface = Interface
+  ['{C7191239-2E89-4D3A-9D1B-F894BACBBB39}']
+  End;
+  {$M-}
 
-{$IFDEF VER260} // RAD Studio XE5
-  {$DEFINE DELPHI_2010_UP}
-  {$DEFINE DELPHI_XE_UP}
-  {$DEFINE DELPHI_XE2_UP}
-  {$DEFINE DELPHI_XE3_UP}
-  {$DEFINE DELPHI_XE4}
-  {$DEFINE DELPHI_XE4_UP}
-  {$DEFINE DELPHI_XE5_UP}
-  {$UNDEF UNSUPPORTED_COMPILER_VERSION}
-{$ENDIF VER260}
+  TTestInterfaceProxy = class(TTestCase)
+  published
+    procedure Does_A_Proxy_Implement_Two_Interfaces_After_A_Cast;
+    procedure After_Destruction_Are_All_The_Interfaces_Cleaned_Up;
+  end;
 
+//TODO: IProxy<T> will not allow a function of CastAs<I> on it, class does however.
 
-{$IFDEF UNSUPPORTED_COMPILER_VERSION}
-  Unsupported Compiler Version (Delphi 2010 or later required!)
-{$ENDIF}
+implementation
+
+uses
+  SysUtils,
+  Delphi.Mocks,
+  Delphi.Mocks.InterfaceProxy;
+
+{ TTestInterfaceProxy }
+
+procedure TTestInterfaceProxy.After_Destruction_Are_All_The_Interfaces_Cleaned_Up;
+var
+  simpleInterface: TInterfaceProxy<ISimpleInterface>;
+  secondInterface: ISecondSimpleInterface;
+begin
+  simpleInterface := TInterfaceProxy<ISimpleInterface>.Create;
+  secondInterface := simpleInterface.CastAs<ISecondSimpleInterface>;
+
+  CheckNotNull(secondInterface, 'The second interface is not implemented!');
+end;
+
+procedure TTestInterfaceProxy.Does_A_Proxy_Implement_Two_Interfaces_After_A_Cast;
+var
+  simpleInterface: TInterfaceProxy<ISimpleInterface>;
+  secondInterface : ISecondSimpleInterface;
+begin
+  simpleInterface := TInterfaceProxy<ISimpleInterface>.Create;
+  try
+    simpleInterface.CastAs<ISecondSimpleInterface>;
+
+    simpleInterface.QueryInterface(ISecondSimpleInterface, secondInterface);
+
+    CheckNotNull(secondInterface, 'The second interface is not implemented!');
+  finally
+    FreeAndNil(simpleInterface);
+  end;
+end;
+
+initialization
+  TestFramework.RegisterTest(TTestInterfaceProxy.Suite);
+end.
