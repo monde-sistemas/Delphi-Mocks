@@ -30,47 +30,47 @@ interface
 uses
   Rtti,
   SysUtils,
+  TypInfo,
   Generics.Collections,
   Delphi.Mocks,
   Delphi.Mocks.Interfaces,
-  Delphi.Mocks.ProxyBase,
+  Delphi.Mocks.Proxy,
   Delphi.Mocks.VirtualMethodInterceptor;
 
 type
-  TObjectProxy<T> = class(TBaseProxy<T>)
+  TObjectProxy<T> = class(TProxy<T>)
   private
     FInstance : T;
     FVMInterceptor : TVirtualMethodInterceptor;
   protected
-     procedure DoBefore(Instance: TObject; Method: TRttiMethod; const Args: TArray<TValue>; out DoInvoke: Boolean; out Result: TValue);
-     function Proxy : T;override;
+    procedure DoBefore(Instance: TObject; Method: TRttiMethod; const Args: TArray<TValue>; out DoInvoke: Boolean; out Result: TValue);
+    function Proxy : T; override;
   public
-    constructor Create;override;
-    destructor Destroy;override;
+    constructor Create(const AIsStubOnly : boolean = false); override;
+    destructor Destroy; override;
   end;
-
 
 implementation
 
 uses
-  TypInfo;
+  Delphi.Mocks.Helpers;
 
 { TObjectProxy<T> }
 
-constructor TObjectProxy<T>.Create;
+constructor TObjectProxy<T>.Create(const AIsStubOnly : boolean);
 var
   ctx   : TRttiContext;
   rType : TRttiType;
   ctor : TRttiMethod;
   instance : TValue;
 begin
-  inherited;
+  inherited Create(AIsStubOnly);
   ctx := TRttiContext.Create;
   rType := ctx.GetType(TypeInfo(T));
   if rType = nil then
     raise EMockNoRTTIException.Create('No TypeInfo found for T');
 
-  ctor := rType.GetMethod('Create');
+  ctor := rType.FindConstructor;
   if ctor = nil then
     raise EMockException.Create('Could not find constructor Create on type ' + rType.Name);
 
@@ -91,12 +91,32 @@ begin
 end;
 
 procedure TObjectProxy<T>.DoBefore(Instance: TObject; Method: TRttiMethod; const Args: TArray<TValue>; out DoInvoke: Boolean; out Result: TValue);
+var
+  vArgs: TArray<TValue>;
+  i, l: Integer;
 begin
   //don't intercept the TObject methods like BeforeDestruction etc.
   if Method.Parent.AsInstance.MetaclassType <> TObject then
   begin
     DoInvoke := False; //don't call the actual method.
-    Self.DoInvoke(Method,Args,Result);
+
+    //Included instance as first argument because TExpectation.Match
+    //deduces that the first argument is the object instance.
+    l := Length(Args);
+    SetLength(vArgs, l+1);
+    vArgs[0] := Instance;
+
+    for i := 1 to l do
+    begin
+      vArgs[i] := Args[i-1];
+    end;
+
+    Self.DoInvoke(Method,vArgs,Result);
+
+    for i := 1 to l do
+    begin
+      Args[i-1] := vArgs[i];
+    end;
   end;
 end;
 

@@ -54,6 +54,7 @@ type
     function GetExpectationMet : boolean;
     function Match(const Args : TArray<TValue>) : boolean;
     procedure RecordHit;
+    procedure CheckExpectationMet;
     function Report : string;
     function ArgsToString : string;
     procedure CopyArgs(const Args: TArray<TValue>);
@@ -86,6 +87,8 @@ type
 
     constructor CreateAfterWhen(const AMethodName : string; const AAfterMethodName : string;const Args : TArray<TValue>);
     constructor CreateAfter(const AMethodName : string; const AAfterMethodName : string);
+
+    procedure AfterConstruction; override;
   end;
 
 
@@ -96,6 +99,12 @@ uses
   Delphi.Mocks.Helpers;
 
 { TExpectation }
+
+procedure TExpectation.AfterConstruction;
+begin
+  inherited;
+  CheckExpectationMet;
+end;
 
 function TExpectation.ArgsToString: string;
 var
@@ -244,14 +253,12 @@ constructor TExpectation.CreateNever(const AMethodName : string) ;
 begin
   Create(AMethodName);
   FExpectationType := TExpectationType.Never;
-  FExpectationMet := True;
 end;
 
 constructor TExpectation.CreateNeverWhen(const AMethodName : string; const Args: TArray<TValue>);
 begin
   CreateWhen(AMethodName,Args);
   FExpectationType := TExpectationType.NeverWhen;
-  FExpectationMet := True;
 end;
 
 constructor TExpectation.CreateOnce(const AMethodName : string );
@@ -325,11 +332,16 @@ end;
 procedure TExpectation.RecordHit;
 begin
   Inc(FHitCount);
+  CheckExpectationMet;
+end;
+
+procedure TExpectation.CheckExpectationMet;
+begin
   case FExpectationType of
     Once,
     OnceWhen: FExpectationMet := FHitCount = 1;
     Never,
-    NeverWhen: FExpectationMet := False;
+    NeverWhen: FExpectationMet := FHitCount = 0;
     AtLeastOnce,
     AtLeastOnceWhen: FExpectationMet := FHitCount >= 1;
     AtLeast,
@@ -358,25 +370,25 @@ begin
   if not FExpectationMet then
   begin
      case FExpectationType of
-       Once: result := 'Once';
-       Never: result := 'Never';
+       Once: result := 'Once - Was ' + IntToStr(FHitCount);
+       Never: result := 'Never - Was ' + IntToStr(FHitCount);
        AtLeastOnce: result := 'At Least Once';
-       AtLeast: result := 'At Least ' + IntToStr(FTimes) + ' Times';
-       AtMost: result := 'At Most ' + IntToStr(FTimes) + ' Times';
-       AtMostOnce: result := 'At Most Once';
-       Between: result := 'Between ' + IntToStr(FBetween[0]) + ' and ' + IntToStr(FBetween[1]) + ' Times';
-       Exactly: result := 'Exactly ' + IntToStr(FTimes) + ' Times';
+       AtLeast: result := 'At Least ' + IntToStr(FTimes) + ' Times - Was ' + IntToStr(FHitCount);
+       AtMost: result := 'At Most ' + IntToStr(FTimes) + ' Times - Was ' + IntToStr(FHitCount);
+       AtMostOnce: result := 'At Most Once - Was ' + IntToStr(FHitCount);
+       Between: result := 'Between ' + IntToStr(FBetween[0]) + ' and ' + IntToStr(FBetween[1]) + ' Times - Was ' + IntToStr(FHitCount);
+       Exactly: result := 'Exactly ' + IntToStr(FTimes) + ' Times - Was ' + IntToStr(FHitCount);
        Before: result := 'Before Method : ' + FBeforeAfterMethodName;
        After: result := 'After Method : ' + FBeforeAfterMethodName;
 
-       OnceWhen: result := 'Once When' + ArgsToString;
-       NeverWhen:result := 'Never When' + ArgsToString ;
+       OnceWhen: result := 'Once When' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
+       NeverWhen: result := 'Never When' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
        AtLeastOnceWhen: result := 'At Least Once When' + ArgsToString;
-       AtLeastWhen: result := 'At Least ' + IntToStr(FTimes) + ' Times When ' + ArgsToString;
-       AtMostOnceWhen: result := 'At Most Once When' + ArgsToString;
-       AtMostWhen: result := 'At Most ' + IntToStr(FTimes) + ' Times When ' + ArgsToString;
-       BetweenWhen: result := 'Between ' + IntToStr(FBetween[0]) + ' and ' + IntToStr(FBetween[1]) + ' Times When' + ArgsToString;
-       ExactlyWhen: result := 'Exactly ' + IntToStr(FTimes) + ' Times When' + ArgsToString;
+       AtLeastWhen: result := 'At Least ' + IntToStr(FTimes) + ' Times When ' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
+       AtMostOnceWhen: result := 'At Most Once When' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
+       AtMostWhen: result := 'At Most ' + IntToStr(FTimes) + ' Times When ' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
+       BetweenWhen: result := 'Between ' + IntToStr(FBetween[0]) + ' and ' + IntToStr(FBetween[1]) + ' Times When' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
+       ExactlyWhen: result := 'Exactly ' + IntToStr(FTimes) + ' Times When' + ArgsToString + ' - Was ' + IntToStr(FHitCount);
        BeforeWhen: result := 'Before Method : ' + FBeforeAfterMethodName + ' When ' + ArgsToString;
        AfterWhen: result := 'After Method : ' + FBeforeAfterMethodName + ' When ' + ArgsToString;
      end;

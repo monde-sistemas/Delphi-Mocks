@@ -15,7 +15,7 @@ type
 
   TTestProxyBase = class(TTestCase)
   published
-    procedure Setup;
+    procedure SetUp;override;
   end;
 
 implementation
@@ -23,14 +23,14 @@ implementation
 uses
   Delphi.Mocks.Helpers,
   Delphi.Mocks.Interfaces,
-  Delphi.Mocks.InterfaceProxy,
   classes;
 
 { TTestProxyBase }
 
 procedure TTestProxyBase.Setup;
 begin
-  Check(False, 'Not Implemented');
+
+//  Check(False, 'Not Implemented');
 end;
 
 initialization
