@@ -121,7 +121,7 @@ type
     procedure SetBehaviorMustBeDefined(const value : boolean);
     function Expect : IExpect<T>;
 
-    {$Message 'TODO: Implement ISetup.Before and ISetup.After.'}
+    // TODO: Implement ISetup.Before and ISetup.After.'
     function WillReturn(const value : TValue) : IWhen<T>;
     procedure WillReturnDefault(const AMethodName : string; const value : TValue);
     function WillRaise(const exceptionClass : ExceptClass; const message : string = '') : IWhen<T>; overload;
@@ -508,7 +508,7 @@ begin
         Exit;
     end;
 
-    {$Message 'TODO: Need to query the parent, but exclude outselves and any other children which have already been called.'}
+    //TODO: Need to query the parent, but exclude outselves and any other children which have already been called.'
 
     //Call the parent.
     if FParentProxy <> nil then
