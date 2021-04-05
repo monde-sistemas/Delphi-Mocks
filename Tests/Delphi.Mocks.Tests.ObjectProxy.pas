@@ -5,7 +5,7 @@ interface
 uses
   Rtti,
   SysUtils,
-  TestFramework,
+  DUnitX.TestFramework,
   Delphi.Mocks;
 
 type
@@ -34,22 +34,36 @@ type
     procedure TestOutParam(out msg : string);virtual;abstract;
   end;
 
-  TTestObjectProxy = class(TTestCase)
+  {$M+}
+  [TestFixture]
+  TTestObjectProxy = class
   published
+    [Test]
     procedure ProxyObject_Calls_The_Create_Of_The_Object_Type;
+    [Test]
     procedure ProxyObject_MultipleConstructor;
-
+    [Test]
     procedure MockWithArgProcedureUsingOnce;
+    [Test]
     procedure MockNoArgProcedureUsingOnce;
+    [Test]
     procedure MockNoArgProcedureUsingOnceWhen;
+    [Test]
     procedure MockNoArgProcedureUsingNeverWhen;
+    [Test]
     procedure MockNoArgProcedureUsingAtLeastOnceWhen;
+    [Test]
     procedure MockNoArgProcedureUsingAtLeastWhen;
+    [Test]
     procedure MockNoArgProcedureUsingAtMostBetweenWhen;
+    [Test]
     procedure MockNoArgProcedureUsingExactlyWhen;
-    procedure TestOuParam;
+    [Test]
+    procedure TestOutParam;
+    [Test]
     procedure TestVarParam;
   end;
+  {$M-}
 
 implementation
 
@@ -65,21 +79,27 @@ procedure TTestObjectProxy.ProxyObject_Calls_The_Create_Of_The_Object_Type;
 var
   objectProxy: IProxy<TSimpleObject>;
 begin
-  objectProxy := TObjectProxy<TSimpleObject>.Create;
+  objectProxy := TObjectProxy<TSimpleObject>.Create(function: TSimpleObject
+                                                    begin 
+                                                      result := TSimpleObject.Create; 
+                                                    end);
 
-  CheckEquals(objectProxy.Proxy.CreateCalled, G_CREATE_CALLED_UNIQUE_ID);
+  Assert.AreEqual(objectProxy.Proxy.CreateCalled, G_CREATE_CALLED_UNIQUE_ID);
 end;
 
 procedure TTestObjectProxy.ProxyObject_MultipleConstructor;
 var
   objectProxy: IProxy<TMultipleConstructor>;
 begin
-  objectProxy := TObjectProxy<TMultipleConstructor>.Create;
+  objectProxy := TObjectProxy<TMultipleConstructor>.Create(function: TMultipleConstructor
+                                                           begin 
+                                                             result := TMultipleConstructor.Create; 
+                                                           end);
 
-  CheckEquals(objectProxy.Proxy.CreateCalled, G_CREATE_CALLED_UNIQUE_ID);
+  Assert.AreEqual(objectProxy.Proxy.CreateCalled, G_CREATE_CALLED_UNIQUE_ID);
 end;
 
-procedure TTestObjectProxy.TestOuParam;
+procedure TTestObjectProxy.TestOutParam;
 const
   RETURN_MSG = 'hello Delphi Mocks! - With out Param';
 var
@@ -91,7 +111,7 @@ begin
   mock.Setup.WillExecute(
     function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
     begin
-      CheckEquals(2, Length(Args), 'Args Length');
+      Assert.AreEqual(2, Length(Args), 'Args Length');
       //Argument Zero is Self Instance
       args[1] := RETURN_MSG;
     end
@@ -100,9 +120,10 @@ begin
   msg := EmptyStr;
   mock.Instance.TestOutParam(msg);
 
-  CheckEquals(RETURN_MSG, msg);
+  Assert.AreEqual(RETURN_MSG, msg);
 
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.TestVarParam;
@@ -117,7 +138,7 @@ begin
   mock.Setup.WillExecute(
     function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
     begin
-      CheckEquals(2, Length(Args), 'Args Length');
+      Assert.AreEqual(2, Length(Args), 'Args Length');
       //Argument Zero is Self Instance
       args[1] := RETURN_MSG;
     end
@@ -126,9 +147,10 @@ begin
   msg := EmptyStr;
   mock.Instance.TestVarParam(msg);
 
-  CheckEquals(RETURN_MSG, msg);
+  Assert.AreEqual(RETURN_MSG, msg);
 
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingAtLeastOnceWhen;
@@ -140,6 +162,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingAtLeastWhen;
@@ -152,6 +175,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingAtMostBetweenWhen;
@@ -163,6 +187,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingExactlyWhen;
@@ -174,20 +199,20 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingNeverWhen;
 var
   mock : TMock<TCommand>;
 begin
-  ExpectedException := EMockVerificationException;
-
   mock := TMock<TCommand>.Create;
   mock.Setup.Expect.Never.When.Execute;
-
   mock.Instance.Execute;
-
-  mock.Verify;
+  Assert.WillRaiseAny(procedure
+    begin
+      mock.Verify;
+    end);
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingOnce;
@@ -197,7 +222,7 @@ begin
   mock := TMock<TCommand>.Create;
   mock.Setup.Expect.Once('Execute');
   mock.Instance.Execute;
-  mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockNoArgProcedureUsingOnceWhen;
@@ -208,6 +233,7 @@ begin
   mock.Setup.Expect.Once.When.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestObjectProxy.MockWithArgProcedureUsingOnce;
@@ -218,6 +244,7 @@ begin
   mock.Setup.Expect.Once.When.Run(3);
   mock.Instance.Run(3);
   mock.Verify;
+  Assert.Pass;
 end;
 
 { TSimpleObject }
@@ -239,6 +266,8 @@ begin
   FCreateCalled := G_CREATE_CALLED_UNIQUE_ID;
 end;
 
+
 initialization
-  TestFramework.RegisterTest(TTestObjectProxy.Suite);
+  TDUnitX.RegisterTestFixture(TTestObjectProxy);
+
 end.

@@ -28,7 +28,7 @@ unit Delphi.Mocks.Tests.InterfaceProxy;
 interface
 
 uses
-  TestFramework;
+  DUnitX.TestFramework;
 
 type
   {$M+}
@@ -58,7 +58,9 @@ type
   end;
   {$M-}
 
-  TTestInterfaceProxy = class(TTestCase)
+  {$M+}
+  [TestFixture]
+  TTestInterfaceProxy = class
   published
     procedure After_Proxy_AddImplement_ProxyProxy_Implements_Original_Interface;
     procedure After_Proxy_AddImplement_ProxyProxy_Implements_New_Interface;
@@ -73,6 +75,7 @@ type
     procedure TestOuParam;
     procedure TestVarParam;
   end;
+  {$M-}
 
 implementation
 
@@ -99,7 +102,7 @@ begin
   newProxy := proxySUT.ProxyFromType(TypeInfo(IInterfaceTwo));
 
   //TEST - Make sure proxy value implements IInterfaceTwo
-  CheckTrue(Supports(newProxy.ProxyInterface, IInterfaceTwo, newInterface));
+  Assert.IsTrue(Supports(newProxy.ProxyInterface, IInterfaceTwo, newInterface));
 end;
 
 procedure TTestInterfaceProxy.After_Proxy_AddImplement_ProxyProxy_Implements_New_Interface;
@@ -114,7 +117,7 @@ begin
   proxySUT.AddImplement(TProxy<IInterfaceTwo>.Create, TypeInfo(IInterfaceTwo));
 
   //TEST - Make sure proxy value implements IInterfaceTwo
-  CheckTrue(Supports(proxySUT.Proxy, IInterfaceTwo, newInterface));
+  Assert.IsTrue(Supports(proxySUT.Proxy, IInterfaceTwo, newInterface));
 end;
 
 procedure TTestInterfaceProxy.After_Proxy_AddImplement_ProxyProxy_Implements_Original_Interface;
@@ -129,9 +132,9 @@ begin
   proxySUT.AddImplement(TProxy<IInterfaceTwo>.Create, TypeInfo(IInterfaceTwo));
 
   //TEST - Make sure proxy value implements IInterfaceOne
-  CheckTrue(Supports(proxySUT.Proxy, IInterfaceOne, originalInterface));
-  CheckNotNull(originalInterface);
-  CheckTrue(originalInterface = proxySUT.Proxy);
+  Assert.IsTrue(Supports(proxySUT.Proxy, IInterfaceOne, originalInterface));
+  Assert.IsNotNull(originalInterface);
+  Assert.IsTrue(originalInterface = proxySUT.Proxy);
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingAtLeastOnceWhen;
@@ -143,6 +146,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingAtLeastWhen;
@@ -155,6 +159,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingAtMostBetweenWhen;
@@ -166,6 +171,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingExactlyWhen;
@@ -177,6 +183,7 @@ begin
   mock.Instance.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingNeverWhen;
@@ -187,6 +194,7 @@ begin
   mock.Setup.Expect.Never.When.Execute;
 
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingOnce;
@@ -197,6 +205,7 @@ begin
   mock.Setup.Expect.Once('Execute');
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.MockNoArgProcedureUsingOnceWhen;
@@ -207,6 +216,7 @@ begin
   mock.Setup.Expect.Once.When.Execute;
   mock.Instance.Execute;
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.TestOuParam;
@@ -221,7 +231,7 @@ begin
   mock.Setup.WillExecute(
     function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
     begin
-      CheckEquals(2, Length(Args), 'Args Length');
+      Assert.AreEqual(2, Length(Args), 'Args Length');
       //Argument Zero is Self Instance
       args[1] := RETURN_MSG;
     end
@@ -230,9 +240,10 @@ begin
   msg := EmptyStr;
   mock.Instance.TestOutParam(msg);
 
-  CheckEquals(RETURN_MSG, msg);
+  Assert.AreEqual(RETURN_MSG, msg);
 
   mock.Verify;
+  Assert.Pass;
 end;
 
 procedure TTestInterfaceProxy.TestVarParam;
@@ -247,7 +258,7 @@ begin
   mock.Setup.WillExecute(
     function (const args : TArray<TValue>; const ReturnType : TRttiType) : TValue
     begin
-      CheckEquals(2, Length(Args), 'Args Length');
+      Assert.AreEqual(2, Length(Args), 'Args Length');
       //Argument Zero is Self Instance
       args[1] := RETURN_MSG;
     end
@@ -256,11 +267,15 @@ begin
   msg := EmptyStr;
   mock.Instance.TestVarParam(msg);
 
-  CheckEquals(RETURN_MSG, msg);
+  Assert.AreEqual(RETURN_MSG, msg);
 
   mock.Verify;
+  Assert.Pass;
 end;
 
+
 initialization
-  TestFramework.RegisterTest(TTestInterfaceProxy.Suite);
+  TDUnitX.RegisterTestFixture(TTestInterfaceProxy);
+
+
 end.

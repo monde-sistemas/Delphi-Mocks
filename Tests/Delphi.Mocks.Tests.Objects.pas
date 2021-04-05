@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils,
-  TestFramework,
+  DUnitX.TestFramework,
   Delphi.Mocks;
 
 type
@@ -23,10 +23,14 @@ type
     procedure CallsSimpleMethodOnMock;
   end;
 
-  TMockObjectTests = class(TTestcase)
+  {$M+}
+  [TestFixture]
+  TMockObjectTests = class
   published
     procedure MockObject_Can_Call_Function;
   end;
+  {$M-}
+
 
 implementation
 
@@ -42,13 +46,17 @@ var
 begin
   //var mock = new Mock<IFoo>();
   //mock.Setup(foo => foo.DoSomething("ping")).Returns(true);
-   mock := TMock<TSimpleMockedObject>.Create;
+  mock := TMock<TSimpleMockedObject>.Create;
 
-   mock.Setup.WillRaise('SimpleMethod', ESimpleException);
+  mock.Setup.WillRaise('SimpleMethod', ESimpleException);
 
-   systemUnderTest := TSystemUnderTest.Create(mock.Instance);
+  systemUnderTest := TSystemUnderTest.Create(mock.Instance);
 
-   systemUnderTest.CallsSimpleMethodOnMock;
+  systemUnderTest.CallsSimpleMethodOnMock;
+
+  mock.VerifyAll;
+
+  Assert.Pass;
 end;
 
 { TSimpleObject }
@@ -60,11 +68,16 @@ end;
 
 { TSystemUnderTest }
 
+procedure TSystemUnderTest.CallsSimpleMethodOnMock;
+begin
+  FMocked.SimpleMethod;
+end;
+
 constructor TSystemUnderTest.Create(const AMock: TSimpleMockedObject);
 begin
   FMocked := AMock;
 end;
 
 initialization
-  TestFramework.RegisterTest(TMockObjectTests.Suite);
+  TDUnitX.RegisterTestFixture(TMockObjectTests);
 end.

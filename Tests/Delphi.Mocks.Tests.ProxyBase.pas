@@ -5,7 +5,7 @@ interface
 uses
   Rtti,
   SysUtils,
-  TestFramework,
+  DUnitX.TestFramework,
   Delphi.Mocks;
 
 type
@@ -13,10 +13,14 @@ type
   TSimpleTestObject = class(TObject);
   {$M-}
 
-  TTestProxyBase = class(TTestCase)
+  {$M+}
+  [TestFixture]
+  TTestProxyBase = class
   published
-    procedure SetUp;override;
+    [Setup]
+    procedure SetUp;
   end;
+  {$M-}
 
 implementation
 
@@ -29,11 +33,9 @@ uses
 
 procedure TTestProxyBase.Setup;
 begin
-
-//  Check(False, 'Not Implemented');
 end;
 
 initialization
-  TestFramework.RegisterTest(TTestProxyBase.Suite);
+  TDUnitX.RegisterTestFixture(TTestProxyBase);
 
 end.

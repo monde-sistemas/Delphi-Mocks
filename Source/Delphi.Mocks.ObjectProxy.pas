@@ -46,7 +46,7 @@ type
     procedure DoBefore(Instance: TObject; Method: TRttiMethod; const Args: TArray<TValue>; out DoInvoke: Boolean; out Result: TValue);
     function Proxy : T; override;
   public
-    constructor Create(const AIsStubOnly : boolean = false); override;
+    constructor Create( const ACreateFunc: TFunc<T>; const AAutoMocker : IAutoMock = nil; const AIsStubOnly : boolean = false); reintroduce;
     destructor Destroy; override;
   end;
 
@@ -57,25 +57,29 @@ uses
 
 { TObjectProxy<T> }
 
-constructor TObjectProxy<T>.Create(const AIsStubOnly : boolean);
+constructor TObjectProxy<T>.Create(const ACreateFunc: TFunc<T>; const AAutoMocker : IAutoMock; const AIsStubOnly : boolean);
 var
   ctx   : TRttiContext;
   rType : TRttiType;
   ctor : TRttiMethod;
   instance : TValue;
 begin
-  inherited Create(AIsStubOnly);
+  inherited Create(AAutoMocker, AIsStubOnly);
   ctx := TRttiContext.Create;
   rType := ctx.GetType(TypeInfo(T));
   if rType = nil then
     raise EMockNoRTTIException.Create('No TypeInfo found for T');
 
-  ctor := rType.FindConstructor;
-  if ctor = nil then
-    raise EMockException.Create('Could not find constructor Create on type ' + rType.Name);
+  if not Assigned(ACreateFunc) then
+  begin
+    ctor := rType.FindConstructor;
+    if ctor = nil then
+      raise EMockException.Create('Could not find constructor Create on type ' + rType.Name);
 
-  instance := ctor.Invoke(rType.AsInstance.MetaclassType, []);
-
+    instance := ctor.Invoke(rType.AsInstance.MetaclassType, []);
+  end
+  else
+    instance := TValue.From<T>(ACreateFunc);
   FInstance := instance.AsType<T>();
   FVMInterceptor := TVirtualMethodInterceptor.Create(rType.AsInstance.MetaclassType);
 
